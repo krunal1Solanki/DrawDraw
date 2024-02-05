@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
-const client = require('./client')
+const client = require('./client');
+const axios = require('axios');
 
 
 app.use(express.json())
@@ -40,6 +41,31 @@ app.get('/get-data/:key', async (req, res) => {
         return res.status(500).json({ error: 'Internal server error.' });
     }
 });
+
+app.get('/speedify', async (req, res) => {
+    // Check if data is already cached in Redis
+    const cachedData = await client.get("some");
+    if (cachedData) {
+        return res.send({
+            data: JSON.parse(cachedData)
+        });
+    }
+
+
+    // Fetch data from external API
+    const response = await axios.get('https://jsonplaceholder.typicode.com/todos');
+
+
+    // Store fetched data in Redis
+    await client.set("some", JSON.stringify(response.data));
+
+    // Send response to client
+    return res.send({
+        data: response.data
+    });
+});
+
+
 app.listen(3012, () => {
     console.log(`3012`)
 })
